@@ -27,7 +27,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 LocalDateTime.now(),
                 resourceNotFound.getMessage(),
                 webRequest.getDescription(false),
-                "DEPARTMENT_NOT_FOUND"
+                "EMPLOYEE_NOT_FOUND"
         );
 
         return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 LocalDateTime.now(),
                 emailAlreadyExist.getMessage(),
                 webRequest.getDescription(false),
-                "CODE_ALREADY_EXIST"
+                "EMAIL_ALREADY_EXIST"
         );
 
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
