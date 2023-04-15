@@ -1,5 +1,6 @@
 package com.sachet.employeeservice.controller;
 
+import com.sachet.employeeservice.dto.ApiResDto;
 import com.sachet.employeeservice.dto.EmployeeDto;
 import com.sachet.employeeservice.entity.Employee;
 import com.sachet.employeeservice.service.EmployeeService;
@@ -28,12 +29,12 @@ public class EmployeeController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EmployeeDto> getById(@PathVariable Long id) {
+    public ResponseEntity<ApiResDto> getById(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
     @GetMapping("/email/{email}")
-    public ResponseEntity<EmployeeDto> getEmployeeByEmail(@PathVariable String email) {
+    public ResponseEntity<ApiResDto> getEmployeeByEmail(@PathVariable String email) {
         return ResponseEntity.ok(employeeService.getEmployeeByEmail(email));
     }
 
