@@ -9,14 +9,12 @@ import com.sachet.employeeservice.exception.ResourceNotFoundException;
 import com.sachet.employeeservice.repository.EmployeeRepository;
 import com.sachet.employeeservice.service.EmployeeService;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -25,13 +23,18 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private EmployeeRepository employeeRepository;
     private ModelMapper modelMapper;
-    private RestTemplate restTemplate;
+    private WebClient webClient;
 
     private DepartmentDto callDepartmentService(String operation, DepartmentDto departmentDto, String url) {
-        ResponseEntity<DepartmentDto> res = null;
+        DepartmentDto res = null;
         if (operation.equals("GET")) {
-            res = restTemplate.getForEntity(url, DepartmentDto.class);
-            return res.getBody();
+            res = webClient
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .bodyToMono(DepartmentDto.class)
+                    .block();
+            return res;
         }
         return null;
     }
