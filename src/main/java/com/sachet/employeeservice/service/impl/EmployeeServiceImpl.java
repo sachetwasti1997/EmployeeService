@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -27,5 +28,31 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeDto getEmployeeById(Long id) {
         Employee employee = employeeRepository.findById(id).orElseThrow();
         return modelMapper.map(employee, EmployeeDto.class);
+    }
+
+    @Override
+    public EmployeeDto getEmployeeByEmail(String email) {
+        return null;
+    }
+
+    @Override
+    public List<EmployeeDto> getAllEmployees() {
+        List<Employee> employees = employeeRepository.findAll();
+        return employees.stream().map(employee -> modelMapper.map(employee, EmployeeDto.class)).toList();
+    }
+
+    @Override
+    public EmployeeDto updateEmployeeById(EmployeeDto employeeDto) {
+        return null;
+    }
+
+    @Override
+    public EmployeeDto updateEmployeeByEmail(String email, EmployeeDto employeeDto) {
+        return null;
+    }
+
+    @Override
+    public void deleteEmployeeByEmail(String email) {
+
     }
 }
