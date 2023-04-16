@@ -36,6 +36,9 @@ info:
 
 eureka:
   instance:
-    client:
-      serverUrl:
-        defaultZone: http://localhost:8761/eureka/
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_ADDRESS:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
