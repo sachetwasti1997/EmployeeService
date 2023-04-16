@@ -1,5 +1,6 @@
 package com.sachet.employeeservice.service.impl;
 
+import com.sachet.employeeservice.clients.ApiClient;
 import com.sachet.employeeservice.dto.ApiResDto;
 import com.sachet.employeeservice.dto.DepartmentDto;
 import com.sachet.employeeservice.dto.EmployeeDto;
@@ -10,7 +11,6 @@ import com.sachet.employeeservice.repository.EmployeeRepository;
 import com.sachet.employeeservice.service.EmployeeService;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -24,16 +24,20 @@ public class EmployeeServiceImpl implements EmployeeService {
     private EmployeeRepository employeeRepository;
     private ModelMapper modelMapper;
     private WebClient webClient;
+    private ApiClient apiClient;
 
-    private DepartmentDto callDepartmentService(String operation, DepartmentDto departmentDto, String url) {
+    private DepartmentDto callDepartmentService(String operation, DepartmentDto departmentDto, String departmentCode) {
         DepartmentDto res = null;
+        String url = "http://localhost:8080/api/v1/department/code/"+departmentCode;
         if (operation.equals("GET")) {
-            res = webClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .bodyToMono(DepartmentDto.class)
-                    .block();
+//            res = webClient
+//                    .get()
+//                    .uri(url)
+//                    .retrieve()
+//                    .bodyToMono(DepartmentDto.class)
+//                    .block();
+//            return res;
+            res = apiClient.getDepartment(departmentCode);
             return res;
         }
         return null;
@@ -57,12 +61,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         DepartmentDto departmentDto = callDepartmentService(
                 "GET",
                 null,
-                "http://localhost:8080/api/v1/department/code/"+employee.getDepartmentCode()
+                employee.getDepartmentCode()
         );
         EmployeeDto em = modelMapper.map(employee, EmployeeDto.class);
         ApiResDto apiResDto = new ApiResDto();
-        apiResDto.setEmployeeDto(em);
-        apiResDto.setDepartmentDto(departmentDto);
+        apiResDto.setEmployee(em);
+        apiResDto.setDepartment(departmentDto);
         return apiResDto;
     }
 
@@ -73,12 +77,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         DepartmentDto departmentDto = callDepartmentService(
                 "GET",
                 null,
-                "http://localhost:8080/api/v1/department/code/"+employee.getDepartmentCode()
+                employee.getDepartmentCode()
         );
         EmployeeDto em = modelMapper.map(employee, EmployeeDto.class);
         ApiResDto apiResDto = new ApiResDto();
-        apiResDto.setEmployeeDto(em);
-        apiResDto.setDepartmentDto(departmentDto);
+        apiResDto.setEmployee(em);
+        apiResDto.setDepartment(departmentDto);
         return apiResDto;
     }
 
