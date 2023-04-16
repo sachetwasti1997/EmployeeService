@@ -1,9 +1,11 @@
 package com.sachet.employeeservice.service.impl;
 
 import com.sachet.employeeservice.clients.ApiClient;
+import com.sachet.employeeservice.clients.ApiClientOrganisation;
 import com.sachet.employeeservice.dto.ApiResDto;
 import com.sachet.employeeservice.dto.DepartmentDto;
 import com.sachet.employeeservice.dto.EmployeeDto;
+import com.sachet.employeeservice.dto.OrganisationDto;
 import com.sachet.employeeservice.entity.Employee;
 import com.sachet.employeeservice.exception.EmailAlreadyExist;
 import com.sachet.employeeservice.exception.ResourceNotFoundException;
@@ -29,8 +31,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     private ModelMapper modelMapper;
     private WebClient webClient;
     private ApiClient apiClient;
+    private ApiClientOrganisation apiClientOrganisation;
     private static final Logger LOGGER = LoggerFactory.getLogger(EmployeeServiceImpl.class);
 
+//    @Retry(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
     private DepartmentDto callDepartmentService(String operation, DepartmentDto departmentDto, String departmentCode) {
         DepartmentDto res = null;
         String url = "http://localhost:8080/api/v1/department/code/"+departmentCode;
@@ -46,6 +50,44 @@ public class EmployeeServiceImpl implements EmployeeService {
             return res;
         }
         return null;
+    }
+
+//    @Retry(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
+    private OrganisationDto callOrganisationService(String operation, DepartmentDto departmentDto, String departmentCode) {
+        OrganisationDto res = null;
+        String url = "http://localhost:8083/api/v1/organisation/code/"+departmentCode;
+        if (operation.equals("GET")) {
+//            res = webClient
+//                    .get()
+//                    .uri(url)
+//                    .retrieve()
+//                    .bodyToMono(DepartmentDto.class)
+//                    .block();
+//            return res;
+            res = apiClientOrganisation.getOrganisation(departmentCode);
+            return res;
+        }
+        return null;
+    }
+
+    private ApiResDto callOrganisationAndDepartment(OrganisationDto organisationDto, DepartmentDto
+                                                    departmentDto, Employee employee) {
+        DepartmentDto departmentDtoRcvd = callDepartmentService(
+                "GET",
+                null,
+                employee.getDepartmentCode()
+        );
+        OrganisationDto organisationDtoRcvd = callOrganisationService(
+                "GET",
+                null,
+                employee.getOrganisationCode()
+        );
+        EmployeeDto em = modelMapper.map(employee, EmployeeDto.class);
+        ApiResDto apiResDto = new ApiResDto();
+        apiResDto.setEmployee(em);
+        apiResDto.setDepartment(departmentDtoRcvd);
+        apiResDto.setOrganisation(organisationDtoRcvd);
+        return apiResDto;
     }
 
     @Override
@@ -71,16 +113,22 @@ public class EmployeeServiceImpl implements EmployeeService {
                 null,
                 employee.getDepartmentCode()
         );
+        OrganisationDto organisationDto = callOrganisationService(
+                "GET",
+                null,
+                employee.getOrganisationCode()
+        );
         EmployeeDto em = modelMapper.map(employee, EmployeeDto.class);
         ApiResDto apiResDto = new ApiResDto();
         apiResDto.setEmployee(em);
         apiResDto.setDepartment(departmentDto);
+        apiResDto.setOrganisation(organisationDto);
         return apiResDto;
     }
 
     @Override
 //    @CircuitBreaker(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
-    @Retry(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
+//    @Retry(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
     public ApiResDto getEmployeeByEmail(String email) {
         Employee employee = employeeRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee", "Email", email));
@@ -89,10 +137,16 @@ public class EmployeeServiceImpl implements EmployeeService {
                 null,
                 employee.getDepartmentCode()
         );
+        OrganisationDto organisationDto = callOrganisationService(
+                "GET",
+                null,
+                employee.getOrganisationCode()
+        );
         EmployeeDto em = modelMapper.map(employee, EmployeeDto.class);
         ApiResDto apiResDto = new ApiResDto();
         apiResDto.setEmployee(em);
         apiResDto.setDepartment(departmentDto);
+        apiResDto.setOrganisation(organisationDto);
         return apiResDto;
     }
 
@@ -132,7 +186,28 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository.delete(employee);
     }
 
+    @Retry(name = "${spring.application.name}", fallbackMethod = "getDefaultOrganisationNoDepartment")
     public ApiResDto getDefaultDepartment(Long id, Exception e) {
+        LOGGER.info("INSIDE getDefaultDepartment");
+        Employee employee = employeeRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("Employee", "Id", id.toString())
+        );
+        OrganisationDto organisationDto = callOrganisationService(
+                "GET",
+                null,
+                employee.getOrganisationCode()
+        );
+        EmployeeDto em = modelMapper.map(employee, EmployeeDto.class);
+        ApiResDto apiResDto = new ApiResDto();
+        apiResDto.setEmployee(em);
+        DepartmentDto departmentDto = new DepartmentDto();
+        departmentDto.setMessage("Unable to find department! Pleas try again later!");
+        apiResDto.setDepartment(departmentDto);
+        apiResDto.setOrganisation(organisationDto);
+        return apiResDto;
+    }
+
+    public ApiResDto getDefaultOrganisationNoDepartment(Long id, Exception e) {
         LOGGER.info("INSIDE getDefaultDepartment");
         Employee employee = employeeRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Employee", "Id", id.toString())
@@ -141,8 +216,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         ApiResDto apiResDto = new ApiResDto();
         apiResDto.setEmployee(em);
         DepartmentDto departmentDto = new DepartmentDto();
+        OrganisationDto organisationDto = new OrganisationDto();
         departmentDto.setMessage("Unable to find department! Pleas try again later!");
+        organisationDto.setMessage("Unable to find organisation! Pleas try again later!");
         apiResDto.setDepartment(departmentDto);
+        apiResDto.setOrganisation(organisationDto);
         return apiResDto;
     }
 }
