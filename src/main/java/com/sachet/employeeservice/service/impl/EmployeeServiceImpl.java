@@ -9,8 +9,12 @@ import com.sachet.employeeservice.exception.EmailAlreadyExist;
 import com.sachet.employeeservice.exception.ResourceNotFoundException;
 import com.sachet.employeeservice.repository.EmployeeRepository;
 import com.sachet.employeeservice.service.EmployeeService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -25,6 +29,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private ModelMapper modelMapper;
     private WebClient webClient;
     private ApiClient apiClient;
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmployeeServiceImpl.class);
 
     private DepartmentDto callDepartmentService(String operation, DepartmentDto departmentDto, String departmentCode) {
         DepartmentDto res = null;
@@ -54,7 +59,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+//    @CircuitBreaker(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
+    @Retry(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
     public ApiResDto getEmployeeById(Long id) {
+        LOGGER.info("INSIDE getEmployeeById");
         Employee employee = employeeRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Employee", "Id", id.toString())
         );
@@ -71,6 +79,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+//    @CircuitBreaker(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
+    @Retry(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
     public ApiResDto getEmployeeByEmail(String email) {
         Employee employee = employeeRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee", "Email", email));
@@ -120,5 +130,19 @@ public class EmployeeServiceImpl implements EmployeeService {
                 () -> new ResourceNotFoundException("Employee", "Email", email)
         );
         employeeRepository.delete(employee);
+    }
+
+    public ApiResDto getDefaultDepartment(Long id, Exception e) {
+        LOGGER.info("INSIDE getDefaultDepartment");
+        Employee employee = employeeRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("Employee", "Id", id.toString())
+        );
+        EmployeeDto em = modelMapper.map(employee, EmployeeDto.class);
+        ApiResDto apiResDto = new ApiResDto();
+        apiResDto.setEmployee(em);
+        DepartmentDto departmentDto = new DepartmentDto();
+        departmentDto.setMessage("Unable to find department! Pleas try again later!");
+        apiResDto.setDepartment(departmentDto);
+        return apiResDto;
     }
 }

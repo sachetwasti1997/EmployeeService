@@ -3,6 +3,11 @@ spring:
     name: EMPLOYEE-SERVICE
   config:
     import: optional:configserver:http://localhost:8888
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 #  datasource:
 #    url: jdbc:mysql://localhost:3306/employee_db
 #    username: root
@@ -20,11 +25,17 @@ spring:
 #server:
 #  port: 8081
 #
-#management:
-#  endpoints:
-#    web:
-#      exposure:
-#        include: "*"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
 #  endpoint:
 #    health:
 #      show-details: always
@@ -45,3 +56,21 @@ spring:
 #      defaultZone: ${EUREKA_SERVER_ADDRESS:http://localhost:8761/eureka/}
 #    fetch-registry: true
 #    register-with-eureka: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      EMPLOYEE-SERVICE:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+  retry:
+    instances:
+      EMPLOYEE-SERVICE:
+        max-attempts: 5
+        wait-duration: 2s
